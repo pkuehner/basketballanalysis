@@ -6,12 +6,15 @@ from nba_api.stats.endpoints import boxscoreplayertrackv2
 from nba_api.stats.endpoints import boxscoredefensive
 from nba_api.stats.endpoints import playbyplayv2
 from nba_api.stats.endpoints import boxscoresummaryv2
+
+from eventTypes import eventTypes
 from own_endpoints import get_rotation
 import time
 import numpy as np
 from numpy import array
 from scipy.cluster.vq import vq, kmeans2, whiten
 import textprocessor
+import rotation_tools
 
 # Basic Request
 import glob
@@ -32,18 +35,41 @@ custom_headers = {
 # for index, game in enumerate(files_pbp):
 game = './games/playbyplay/0021900001.json'
 game_sum = './games/summary/0021900001.json'
+game_rot = './games/rotation/0021900001.json'
+
+
 game_data = pd.read_json(game_sum)
 home_team = teams.find_team_name_by_id(game_data.loc[0, 'HOME_TEAM_ID'])
 away_team = teams.find_team_name_by_id(game_data.loc[0, 'VISITOR_TEAM_ID'])
 
 pbp_data = pd.read_json(game)
 x = {}
-print(pbp_data.columns)
+starters_by_period = rotation_tools.get_starters_by_period(game_rot, game_sum)
+lineup_home = []
+lineup_away = []
+current_period = -1
 for i in range(len(pbp_data['HOMEDESCRIPTION'])):
-    print(i)
+    current_period_new = pbp_data.loc[i, 'PERIOD']-1
+    if current_period_new > current_period:
+        current_period = current_period_new
+        print('Period Start')
+        lineup_home = starters_by_period[current_period]['home']
+        lineup_away = starters_by_period[current_period]['away']
+
     if pbp_data.loc[i,'HOMEDESCRIPTION'] is not None:
         x['text']= pbp_data.loc[i,'HOMEDESCRIPTION']
+        event = tp.process_item(x)
+
+        if event['type'] == eventTypes.SUB:
+            print(event)
+            playerOutId = pbp_data.loc[i, 'PLAYER1_ID']
+            playerInId = pbp_data.loc[i, 'PLAYER2_ID']
+            print(lineup_home, playerInId, playerOutId)
+            lineup_home_new = [x if x != playerOutId else playerInId for x in lineup_home]
+            lineup_home = lineup_home_new
+            print(lineup_home)
     elif pbp_data.loc[i,'VISITORDESCRIPTION'] is not None:
         x['text'] = pbp_data.loc[i, 'VISITORDESCRIPTION']
     else: x['text'] = ''
-    print(tp.process_item(x))
+
+

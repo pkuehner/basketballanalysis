@@ -93,7 +93,7 @@ class TextProcessor(object):
                 return event
             m = self.VIOLATION_RE.match(text)
             if m:
-                event = {'player': m.group(1), 'violation': eventTypes.VIOLATION, 'note': m.group(2)}
+                event = {'player': m.group(1), 'type': eventTypes.VIOLATION, 'note': m.group(2)}
                 return event
             m = self.FREE_THROW_RE.match(text)
             if m:
