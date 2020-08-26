@@ -2,8 +2,7 @@ import re
 class TextProcessor(object):
     SHOT_RE = re.compile('(MISS)?\s*(.+)\s+(\d+)\'\s*(((3PT|Tip|Alley Oop|Cutting|Dunk|Pullup|Turnaround|Running|Driving|Hook|Jump|3pt|Layup|Floating|Fadeaway|Bank|No) ?)+)\s*[Ss]hot\s*\((\d*) PTS\)?\s*\(((.+) (\d+) AST\))?') #TODO: Track AST,BLK
     REBOUND_RE = re.compile('(.+?) (Rebound|REBOUND)\s*(\(Off:\s*(\d+) Def:\s*(\d+)\))?')
-    DEFENSE_RE = re.compile('(Block|Steal): ?(.+?) ')
-    ASSIST_RE = re.compile('Assist: (.+?) ')
+    DEFENSE_RE = re.compile('(.+?) (BLOCK|STEAL) \((\d+) (STL|BLK)\)')
     TIMEOUT_RE = re.compile('Team Timeout : (Short|Regular|No Timeout|Official)')
     TURNOVER_RE = re.compile('(.+?) Turnover : ((Out of Bounds|Poss)? ?(- )?(Punched Ball|5 Second|Out Of Bounds|Basket from Below|Illegal Screen|No|Swinging Elbows|Double Dribble|Illegal Assist|Inbound|Palming|Kicked Ball|Jump Ball|Lane|Backcourt|Offensive Goaltending|Discontinue Dribble|Lost Ball|Foul|Bad Pass|Traveling|Step Out of Bounds|3 Second|Offensive Foul|Player Out of Bounds)( Violation)?( Turnover)?) ')
     TEAM_TURNOVER_RE = re.compile('Team T\s*(.+)\s+(\d+)\'\s*urnover : ((8 Second Violation|5 Sec Inbound|Backcourt|Shot Clock|Offensive Goaltending|3 Second)( Violation)?( Turnover)?)')
@@ -31,7 +30,7 @@ class TextProcessor(object):
             l = len(text)
             m = self.SHOT_RE.match(text)
             if m:
-                event = {'player': m.group(2), 'number': m.group(3), 'fga': 1, 'shot_type': m.group(4), '3pa':0, 'shot_made':0, 'ast_player':None}
+                event = {'player': m.group(2), 'dist': m.group(3), 'fga': 1, 'shot_type': m.group(4), '3pa':0, 'shot_made':0, 'ast_player':None}
                 if '3PT' in m.group(4):
                     event['3pa'] = 1
                 if m.group(1) is None:
@@ -50,17 +49,11 @@ class TextProcessor(object):
                 text = text[m.end():].strip()
             m = self.DEFENSE_RE.match(text)
             if m:
-                event = {'player': m.group(2)}
-                if m.group(1) == 'Block':
-                    item['events'][-1]['blka'] = 1
+                event = {'player': m.group(1)}
+                if m.group(2) == 'BLOCK':
                     event['blk'] = 1
                 else:
                     event['stl'] = 1
-                item['events'].append(event)
-                text = text[m.end():].strip()
-            m = self.ASSIST_RE.match(text)
-            if m:
-                event = {'player': m.group(1), 'ast': 1}
                 item['events'].append(event)
                 text = text[m.end():].strip()
             m = self.TIMEOUT_RE.match(text)
