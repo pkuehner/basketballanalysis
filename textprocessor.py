@@ -7,11 +7,11 @@ class TextProcessor(object):
     ASSIST_RE = re.compile('Assist: (.+?) ')
     TIMEOUT_RE = re.compile('Team Timeout : (Short|Regular|No Timeout|Official)')
     TURNOVER_RE = re.compile('(.+?) Turnover : ((Out of Bounds|Poss)? ?(- )?(Punched Ball|5 Second|Out Of Bounds|Basket from Below|Illegal Screen|No|Swinging Elbows|Double Dribble|Illegal Assist|Inbound|Palming|Kicked Ball|Jump Ball|Lane|Backcourt|Offensive Goaltending|Discontinue Dribble|Lost Ball|Foul|Bad Pass|Traveling|Step Out of Bounds|3 Second|Offensive Foul|Player Out of Bounds)( Violation)?( Turnover)?) ')
-    TEAM_TURNOVER_RE = re.compile('Team Turnover : ((8 Second Violation|5 Sec Inbound|Backcourt|Shot Clock|Offensive Goaltending|3 Second)( Violation)?( Turnover)?)')
+    TEAM_TURNOVER_RE = re.compile('Team T\s*(.+)\s+(\d+)\'\s*urnover : ((8 Second Violation|5 Sec Inbound|Backcourt|Shot Clock|Offensive Goaltending|3 Second)( Violation)?( Turnover)?)')
     FOUL_RE = re.compile('(.+?) Foul: (Clear Path|Flagrant|Away From Play|Personal Take|Inbound|Loose Ball|Offensive|Offensive Charge|Personal|Shooting|Personal Block|Shooting Block|Defense 3 Second)( Type (\d+))? ( )? ')
     JUMP_RE = re.compile('Jump Ball (.+?) vs (.+)( )?')
     VIOLATION_RE = re.compile('(.+?) Violation:(Defensive Goaltending|Kicked Ball|Lane|Jump Ball|Double Lane)( )?')
-    FREE_THROW_RE = re.compile('(.+?) Free Throw (Flagrant|Clear Path)? ?(\d) of (\d) (Missed)? ?()?')
+    FREE_THROW_RE = re.compile('(MISS)?\s*(.+) Free Throw (Flagrant|Clear Path)? ?(\d) of (\d)\s*(\((\d+) PTS\))?')
     TECHNICAL_FT_RE = re.compile('(.+?) Free Throw Technical (Missed)? ?()?')
     SUB_RE = re.compile('(.+?) Substitution replaced by (.+?)$')
     TEAM_VIOLATION_RE = re.compile('Team Violation : (Delay Of Game) ')
@@ -32,16 +32,6 @@ class TextProcessor(object):
             l = len(text)
             m = self.SHOT_RE.match(text)
             if m:
-                print(m.group(1))
-                print(m.group(2))
-                print(m.group(3))
-                print(m.group(4))
-                print(m.group(5))
-                print(m.group(6))
-                print(m.group(7))
-                print(m.group(8))
-                print(m.group(9))
-                print(m.group(10))
                 event = {'player': m.group(2), 'number': m.group(3), 'fga': 1, 'shot_type': m.group(4), '3pa':0, 'shot_made':0, 'ast_player':None}
                 if '3PT' in m.group(4):
                     event['3pa'] = 1
@@ -117,12 +107,10 @@ class TextProcessor(object):
                 text = text[m.end():].strip()
             m = self.FREE_THROW_RE.match(text)
             if m:
-                event = {'player': m.group(1), 'fta': 1, 'attempt': m.group(3), 'of': m.group(4)}
-                if m.group(5) is None:
-                    event['pts'] = 1
-                    event['ftm'] = 1
-                if m.group(2):
-                    event['special'] = m.group(2)
+                event = {'player': m.group(2), 'number': None, 'fta': 1, 'shot_type': 'Free Throw', 'fta_no': m.group(4), 'fta_ovr': m.group(5), '3pa': 0,
+                         'shot_made': 0, 'ast_player': None}
+                if m.group(1) is None:
+                    event['shot_made'] = 1
                 item['events'].append(event)
                 text = text[m.end():].strip()
             m = self.TECHNICAL_FT_RE.match(text)
