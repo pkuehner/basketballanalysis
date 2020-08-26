@@ -27,14 +27,16 @@ custom_headers = {
     'x-nba-stats-origin': 'stats',
     'x-nba-stats-token': 'true'
 }
-files_reg = glob.glob("./games/summary/*.json")
-files_pbp = glob.glob("./games/playbyplay/*.json")
-for index, game in enumerate(files_pbp):
-    game_data = pd.read_json(files_reg[index])
-    home_team = teams.find_team_name_by_id(game_data.loc[0, 'HOME_TEAM_ID'])
-    away_team = teams.find_team_name_by_id(game_data.loc[0, 'VISITOR_TEAM_ID'])
+# files_reg = glob.glob("./games/summary/*.json")
+# files_pbp = glob.glob("./games/playbyplay/*.json")
+# for index, game in enumerate(files_pbp):
+game = './games/playbyplay/0021900001.json'
+game_sum = './games/summary/0021900001.json'
+game_data = pd.read_json(game_sum)
+home_team = teams.find_team_name_by_id(game_data.loc[0, 'HOME_TEAM_ID'])
+away_team = teams.find_team_name_by_id(game_data.loc[0, 'VISITOR_TEAM_ID'])
 
-    pbp_data = pd.read_json(game)
-    x = {}
-    x['text']= pbp_data.loc[2,'HOMEDESCRIPTION']
-    print(tp.process_item(x))
+pbp_data = pd.read_json(game)
+x = {}
+x['text']= pbp_data.loc[19,'HOMEDESCRIPTION']
+print(tp.process_item(x))

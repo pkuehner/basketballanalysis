@@ -1,6 +1,6 @@
 import re
 class TextProcessor(object):
-    SHOT_RE = re.compile('(MISS)?\s*(.+)\s+(\d+)\'\s*(((Tip|Alley Oop|Cutting|Dunk|Pullup|Turnaround|Running|Driving|Hook|Jump|3pt|Layup|Floating|Fadeaway|Bank|No) ?)+)\s*[Ss]hot\s*((\d*) PTS)?\s*((.+) (\d+) AST)?') #TODO: Track AST,BLK
+    SHOT_RE = re.compile('(MISS)?\s*(.+)\s+(\d+)\'\s*(((3PT|Tip|Alley Oop|Cutting|Dunk|Pullup|Turnaround|Running|Driving|Hook|Jump|3pt|Layup|Floating|Fadeaway|Bank|No) ?)+)\s*[Ss]hot\s*\((\d*) PTS\)?\s*\(((.+) (\d+) AST\))?') #TODO: Track AST,BLK
     REBOUND_RE = re.compile('(.+?) Rebound ')
     TEAM_REBOUND_RE = re.compile('Team Rebound')
     DEFENSE_RE = re.compile('(Block|Steal): ?(.+?) ')
@@ -42,18 +42,13 @@ class TextProcessor(object):
                 print(m.group(8))
                 print(m.group(9))
                 print(m.group(10))
-                event = {'player': m.group(1), 'fga': 1, 'type': m.group(2)}
-                if '3pt' in m.group(2):
-                    event['fg3a'] = 1
-                    if m.group(5) == 'Made':
-                        event['fg3m'] = 1
-                        event['fgm'] = 1
-                        event['pts'] = 3
-                else:
-                    if m.group(5) == 'Made':
-                        event['fg3m'] = 1
-                        event['fgm'] = 1
-                        event['pts'] = 2
+                event = {'player': m.group(2), 'number': m.group(3), 'fga': 1, 'shot_type': m.group(4), '3pa':0, 'shot_made':0, 'ast_player':None}
+                if '3PT' in m.group(4):
+                    event['3pa'] = 1
+                if m.group(1) is None:
+                    event['shot_made'] = 1
+                if m.group(9) is not None:
+                    event['ast_player'] = m.group(9)
                 item['events'].append(event)
                 text = text[m.end():].strip()
             m = self.REBOUND_RE.match(text)
