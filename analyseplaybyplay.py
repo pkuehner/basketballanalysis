@@ -38,5 +38,5 @@ away_team = teams.find_team_name_by_id(game_data.loc[0, 'VISITOR_TEAM_ID'])
 
 pbp_data = pd.read_json(game)
 x = {}
-x['text']= pbp_data.loc[267,'HOMEDESCRIPTION']
+x['text']= pbp_data.loc[521,'HOMEDESCRIPTION']
 print(tp.process_item(x))
