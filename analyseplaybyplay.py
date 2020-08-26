@@ -38,5 +38,12 @@ away_team = teams.find_team_name_by_id(game_data.loc[0, 'VISITOR_TEAM_ID'])
 
 pbp_data = pd.read_json(game)
 x = {}
-x['text']= pbp_data.loc[521,'HOMEDESCRIPTION']
-print(tp.process_item(x))
+print(pbp_data.columns)
+for i in range(len(pbp_data['HOMEDESCRIPTION'])):
+    print(i)
+    if pbp_data.loc[i,'HOMEDESCRIPTION'] is not None:
+        x['text']= pbp_data.loc[i,'HOMEDESCRIPTION']
+    elif pbp_data.loc[i,'VISITORDESCRIPTION'] is not None:
+        x['text'] = pbp_data.loc[i, 'VISITORDESCRIPTION']
+    else: x['text'] = ''
+    print(tp.process_item(x))
