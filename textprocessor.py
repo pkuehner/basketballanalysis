@@ -1,8 +1,7 @@
 import re
 class TextProcessor(object):
     SHOT_RE = re.compile('(MISS)?\s*(.+)\s+(\d+)\'\s*(((3PT|Tip|Alley Oop|Cutting|Dunk|Pullup|Turnaround|Running|Driving|Hook|Jump|3pt|Layup|Floating|Fadeaway|Bank|No) ?)+)\s*[Ss]hot\s*\((\d*) PTS\)?\s*\(((.+) (\d+) AST\))?') #TODO: Track AST,BLK
-    REBOUND_RE = re.compile('(.+?) Rebound ')
-    TEAM_REBOUND_RE = re.compile('Team Rebound')
+    REBOUND_RE = re.compile('(.+?) (Rebound|REBOUND)\s*(\(Off:\s*(\d+) Def:\s*(\d+)\))?')
     DEFENSE_RE = re.compile('(Block|Steal): ?(.+?) ')
     ASSIST_RE = re.compile('Assist: (.+?) ')
     TIMEOUT_RE = re.compile('Team Timeout : (Short|Regular|No Timeout|Official)')
@@ -43,7 +42,10 @@ class TextProcessor(object):
                 text = text[m.end():].strip()
             m = self.REBOUND_RE.match(text)
             if m:
-                event = {'player': m.group(1), 'reb': 1}
+                if(m.group(3) is not None):
+                    event = {'player': m.group(1), 'reb': 1, 'oreb_tot': m.group(4), 'dreb_tot': m.group(5)}
+                else:
+                    event = {'team': m.group(1), 'team_reb': 1, 'reb':1}
                 item['events'].append(event)
                 text = text[m.end():].strip()
             m = self.DEFENSE_RE.match(text)
@@ -75,10 +77,6 @@ class TextProcessor(object):
             if m:
                 event = {'turnover': m.group(1)}
                 item['events'].append(event)
-                text = text[m.end():].strip()
-            m = self.TEAM_REBOUND_RE.match(text)
-            if m:
-                item['events'].append({'rebound': 'team'})
                 text = text[m.end():].strip()
             m = self.FOUL_RE.match(text)
             # TODO: Are all of these actual personal fouls?
