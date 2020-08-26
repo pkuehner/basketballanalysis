@@ -4,8 +4,8 @@ class TextProcessor(object):
     REBOUND_RE = re.compile('(.+?) (Rebound|REBOUND)\s*(\(Off:\s*(\d+) Def:\s*(\d+)\))?')
     DEFENSE_RE = re.compile('(.+?) (BLOCK|STEAL) \((\d+) (STL|BLK)\)')
     TIMEOUT_RE = re.compile('Team Timeout : (Short|Regular|No Timeout|Official)')
-    TURNOVER_RE = re.compile('(.+?) Turnover : ((Out of Bounds|Poss)? ?(- )?(Punched Ball|5 Second|Out Of Bounds|Basket from Below|Illegal Screen|No|Swinging Elbows|Double Dribble|Illegal Assist|Inbound|Palming|Kicked Ball|Jump Ball|Lane|Backcourt|Offensive Goaltending|Discontinue Dribble|Lost Ball|Foul|Bad Pass|Traveling|Step Out of Bounds|3 Second|Offensive Foul|Player Out of Bounds)( Violation)?( Turnover)?) ')
-    TEAM_TURNOVER_RE = re.compile('Team T\s*(.+)\s+(\d+)\'\s*urnover : ((8 Second Violation|5 Sec Inbound|Backcourt|Shot Clock|Offensive Goaltending|3 Second)( Violation)?( Turnover)?)')
+    TURNOVER_RE = re.compile('([A-Za-z0-9 ]+?)\s*(((Out of Bounds|Poss)? ?(- )?(Punched Ball|5 Second|Out Of Bounds|Basket from Below|Illegal Screen|No|Swinging Elbows|Double Dribble|Illegal Assist|Inbound|Palming|Kicked Ball|Jump Ball|Lane|Backcourt|Offensive Goaltending|Discontinue Dribble|Lost Ball|Foul|Bad Pass|Traveling|Step Out of Bounds|3 Second|Offensive Foul|Player Out of Bounds|Turnover) ?)+( Violation| Turnover)?) \(P(\d*)\.T(\d+)\)')
+    TEAM_TURNOVER_RE = re.compile('([A-Za-z]+) ?Turnover ?: ((8 Second Violation|5 Sec Inbound|Backcourt|Shot Clock|Offensive Goaltending|3 Second)( Violation)? \(T#(\d+)\)?)')
     FOUL_RE = re.compile('(.+?) Foul: (Clear Path|Flagrant|Away From Play|Personal Take|Inbound|Loose Ball|Offensive|Offensive Charge|Personal|Shooting|Personal Block|Shooting Block|Defense 3 Second)( Type (\d+))? ( )? ')
     JUMP_RE = re.compile('Jump Ball (.+?) vs (.+)( )?')
     VIOLATION_RE = re.compile('(.+?) Violation:(Defensive Goaltending|Kicked Ball|Lane|Jump Ball|Double Lane)( )?')
@@ -63,12 +63,12 @@ class TextProcessor(object):
                 text = text[m.end():].strip()
             m = self.TURNOVER_RE.match(text)
             if m:
-                event = {'player': m.group(1), 'tov': 1, 'note': m.group(2)}
+                event = {'player': m.group(1), 'tov': 1, 'note': m.group(2), 'team_to': m.group(9), 'player_to': m.group(8)}
                 item['events'].append(event)
                 text = text[m.end():].strip()
             m = self.TEAM_TURNOVER_RE.match(text)
             if m:
-                event = {'turnover': m.group(1)}
+                event = {'team_tov': 1, 'team': m.group(1), 'note': m.group(3), 'team_to': m.group(5)}
                 item['events'].append(event)
                 text = text[m.end():].strip()
             m = self.FOUL_RE.match(text)
