@@ -1,4 +1,5 @@
 import pandas as pd
+import json
 import requests
 from nba_api.stats.static import teams
 from nba_api.stats.endpoints import boxscoreadvancedv2
@@ -75,7 +76,7 @@ def add_ast(playerId):
 
 def add_lineup_to_stats():
     if not str(lineups[curr_team]) in stats[curr_team]:
-        stats[curr_team][str(lineups[curr_team])] = {'2ptm': 0, '3ptm': 0, 'ftm': 0, '2pta': 0, '3pta': 0, 'fta': 0, 'poss': 0, 'tov': 0, 'ast': 0, 'foul_s':0, 'foul_reg':0, 'd_reb':0, 'o_reb':0, 'min': 0}
+        stats[curr_team][str(lineups[curr_team])] = {'lineup':lineups[curr_team], '2ptm': 0, '3ptm': 0, 'ftm': 0, '2pta': 0, '3pta': 0, 'fta': 0, 'poss': 0, 'tov': 0, 'ast': 0, 'foul_s':0, 'foul_reg':0, 'd_reb':0, 'o_reb':0, 'min': 0, 'subs': 0}
 def add_possession():
     stats[curr_team][str(lineups[curr_team])]['poss'] += 1
 
@@ -87,6 +88,10 @@ def add_reb():
     if last_shot_team == curr_team:
         reb_type = 'o_reb'
     stats[curr_team][str(lineups[curr_team])][reb_type] += 1
+
+def add_sub(new_lineup):
+    stats[curr_team][str(lineups[curr_team])]['subs'] += 1
+
 
 def add_foul(foul_type):
     if(foul_type == 'S'):
@@ -132,7 +137,8 @@ for i in range(len(pbp_data['HOMEDESCRIPTION'])):
     if event['type'] == eventTypes.SUB:
         playerOutId = pbp_data.loc[i, 'PLAYER1_ID']
         playerInId = pbp_data.loc[i, 'PLAYER2_ID']
-        lineup_new = [x if x != playerOutId else playerInId for x in lineups[curr_team]]
+        lineup_new = [x if x != playerOutId else int(playerInId) for x in lineups[curr_team]]
+        add_sub(lineup_new)
         lineups[curr_team] = lineup_new
         add_lineup_to_stats()
     elif event['type'] == eventTypes.SHOT:
@@ -170,6 +176,9 @@ secs = 0
 for key in stats['away'].keys():
     secs+= stats['away'][key]['o_reb']
 print(secs)
+with open('test_game.json', 'w') as fp:
+    json.dump(stats, fp)
+
 
 
 
