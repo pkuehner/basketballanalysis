@@ -16,4 +16,5 @@ class eventTypes(Enum):
     VIOLATION = "VIOLATION"
     BLK = "BLOCK"
     STL = "STEAL"
+    ERROR = "ERROR"
 
