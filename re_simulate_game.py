@@ -1,6 +1,7 @@
 import numpy as np
 import json
 import random
+from nba_api.stats.static import players
 
 
 def find_close_lineups(lineup_num, curr_team):
@@ -8,7 +9,7 @@ def find_close_lineups(lineup_num, curr_team):
     close_lineups = []
     for index, lineup2 in enumerate(lineups[curr_team]):
         sym_diff = set(lineup).symmetric_difference(lineup2)
-        if len(sym_diff) >= 2:
+        if len(sym_diff) == 2:
             close_lineups.append(index)
     return close_lineups
 
@@ -53,9 +54,13 @@ def calculate_percentage_for_reb(lineup_num, curr_team):
         percentages = {'o_reb': 0}
     return percentages
 
+def print_lineup(lineup_num, curr_team):
+    for player in lineups[curr_team][lineup_num]:
+        print(players.find_player_by_id(player))
 
 def change_lineup(lineup_num, curr_team):
     print(curr_team + ' exchanged to Lineup: ' + str(lineup_num))
+    print_lineup(lineup_num, curr_team)
     curr_lineups[curr_team] = lineup_num
     sub_percentages[curr_team] = calculate_percentage_for_substitution(lineup_num, curr_team)
     shot_percentages[curr_team] = calculate_shot_percentages(lineup_num, curr_team)
@@ -70,7 +75,7 @@ def change_possession(curr_team):
         return 'away'
 
 
-with open('test_game.json') as json_file:
+with open('MIL.json') as json_file:
     stats = json.load(json_file)
 
 curr_team = 'home'
@@ -108,9 +113,10 @@ shot_percentages = {'home': calculate_shot_percentages(0, 'home'), 'away': calcu
 reb_percentages = {'home': calculate_percentage_for_reb(0, 'home'), 'away': calculate_percentage_for_reb(0, 'away')}
 sub_percentage = 0.1
 scores = {'home': 0, 'away': 0}
-while possessions != 215:
+while possessions != 225:
     possessions += 1
-    if np.random.rand() <= sub_percentage:
+    x = np.random.rand()
+    if x <= sub_percentage:
         options = sub_percentages[curr_team]
         x = np.random.rand()
         s = 0

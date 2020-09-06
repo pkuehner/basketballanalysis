@@ -3,20 +3,20 @@ from eventTypes import eventTypes
 
 class TextProcessor(object):
     SHOT_RE = re.compile(
-        '(MISS)?\s*([^\']+)\s+((\d+)\')?\s*(((3PT|Tip|Alley Oop|Cutting|Dunk|Pullup|Pull-Up|Turnaround|Finger|Roll|Running|Driving|Hook|Putback|Step|Back|Jump|3pt|Layup|Floating|Fadeaway|Reverse|Bank|No) ?)*)\s*([Ss]hot|Layup|Jumper|Dunk|Fadeaway)\s*(\((\d*) PTS\))?\s*(\((.+) (\d+) AST\))?')  # TODO: Track AST,BLK
+        '(MISS)?\s*([^\']+|O\'Quinn)\s+((\d+)\')?\s*(((3PT|Tip|Alley Oop|Cutting|Dunk|Pullup|Pull-Up|Turnaround|Finger|Roll|Running|Driving|Hook|Putback|Step|Back|Jump|3pt|Layup|Floating|Fadeaway|Reverse|Bank|No) ?)*)\s*([Ss]hot|Layup|Jumper|Dunk|Fadeaway)\s*(\((\d*) PTS\))?\s*(\((.+) (\d+) AST\))?')  # TODO: Track AST,BLK
     REBOUND_RE = re.compile('(.+?) (Rebound|REBOUND)\s*(\(Off:\s*(\d+) Def:\s*(\d+)\))?')
     DEFENSE_RE = re.compile('(.+?) (BLOCK|STEAL) \((\d+) (STL|BLK)\)')
     TIMEOUT_RE = re.compile('([A-Za-z]+) ?Timeout: (Short|Regular|No Timeout|Official)(.*)')
     TURNOVER_RE = re.compile(
-        '([A-Za-z0-9 \-]+?)\s*(((Out of Bounds|Poss)? ?(- )?(Punched Ball|5 Second|Out Of Bounds|Basket from Below|Illegal Screen|No|Swinging Elbows|Double Dribble|Illegal Assist|Inbound|Palming|Kicked Ball|Jump Ball|Lane|Backcourt|Offensive Goaltending|Discontinue Dribble|Lost Ball|Foul|Bad Pass|Traveling|Step Out of Bounds|3 Second|Offensive Foul|Player Out of Bounds|Violation|Turnover) ?)+( Violation| Turnover)) \(P(\d*)\.T(\d+)\)')
+        '([A-Za-z0-9 \-\'\.]+?)\s*(((Out of Bounds|Poss)? ?(- )?(Punched Ball|5 Second|Out Of Bounds|Basket from Below|Illegal Screen|No|Swinging Elbows|Double Dribble|Illegal Assist|Inbound|Palming|Kicked Ball|Jump Ball|Lane|Backcourt|Offensive Goaltending|Discontinue Dribble|Lost Ball|Foul|Bad Pass|Traveling|Step Out of Bounds|3 Second|Offensive Foul|Player Out of Bounds|Violation|Turnover) ?)+( Violation| Turnover)) \(P(\d*)\.T(\d+)\)')
     TEAM_TURNOVER_RE = re.compile(
         '([A-Za-z]+) ?Turnover ?: ((8 Second Violation|5 Sec Inbound|Backcourt|Shot Clock|Offensive Goaltending|3 Second)( Violation)? \(T#(\d+)\)?)')
     FOUL_RE = re.compile(
-        '([A-Za-z0-9 \-]+?) (AWAY\.FROM\.PLAY|P|S|L|L\.B|OFF|T|Offensive Charge)\.? ?(FOUL|Foul) \((P|T)(\d+).?(.(\d+)\))?.*')
+        '([A-Za-z0-9 \-\'\.]+?) (AWAY\.FROM\.PLAY|P|S|L|L\.B|OFF|T|Offensive Charge)\.? ?(FOUL|Foul) \((P|T)(\d+).?(.(\d+)\))?.*')
     JUMP_RE = re.compile('Jump Ball (.+?) vs. (.+):(.*)?')
     VIOLATION_RE = re.compile('(.+?) Violation:(Defensive Goaltending|Kicked Ball|Lane|Jump Ball|Double Lane)( )?')
     FREE_THROW_RE = re.compile('(MISS)?\s*(.+) Free Throw (Flagrant|Clear Path)? ?(\d) of (\d)\s*(\((\d+) PTS\))?')
-    TECHNICAL_FT_RE = re.compile('(MISS)?\s([A-Za-z0-9 \-]+)? Free Throw Technical')
+    TECHNICAL_FT_RE = re.compile('(MISS)?\s([A-Za-z0-9 \-\.\']+)? Free Throw Technical')
     SUB_RE = re.compile('SUB: (.+) FOR (.+)')
     TEAM_VIOLATION_RE = re.compile('Team Violation : (Delay Of Game) ')
     TECHNICAL_RE = re.compile('(.+?) Technical (- )?([A-Z]+)? ?')
@@ -135,7 +135,7 @@ class TextProcessor(object):
                 text = text[m.end():].strip()
             m = self.EJECTION_RE.match(text)
             if m:
-                item['events'].append({'player': m.group(1), 'ejection': True, 'note': m.group(2)})
+#                item['events'].append({'player': m.group(1), 'ejection': True, 'note': m.group(2)})
                 text = text[m.end():].strip()
 
             if len(text) == l:

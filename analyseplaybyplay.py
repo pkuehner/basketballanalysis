@@ -1,7 +1,7 @@
 import pandas as pd
 import json
 import requests
-from nba_api.stats.static import teams
+from nba_api.stats.static import teams as tm
 from nba_api.stats.endpoints import boxscoreadvancedv2
 from nba_api.stats.endpoints import boxscoreplayertrackv2
 from nba_api.stats.endpoints import boxscoredefensive
@@ -32,29 +32,9 @@ custom_headers = {
     'x-nba-stats-origin': 'stats',
     'x-nba-stats-token': 'true'
 }
-# files_reg = glob.glob("./games/summary/*.json")
-# files_pbp = glob.glob("./games/playbyplay/*.json")
-# for index, game in enumerate(files_pbp):
-game = './games/playbyplay/0021900002.json'
-game_sum = './games/summary/0021900002.json'
-game_rot = './games/rotation/0021900002.json'
+files_reg = glob.glob("./games/summary/*.json")
+files_pbp = glob.glob("./games/playbyplay/*.json")
 
-game_data = pd.read_json(game_sum)
-home_team = teams.find_team_name_by_id(game_data.loc[0, 'HOME_TEAM_ID'])
-away_team = teams.find_team_name_by_id(game_data.loc[0, 'VISITOR_TEAM_ID'])
-
-pbp_data = pd.read_json(game)
-x = {}
-starters_by_period = rotation_tools.get_starters_by_period(game_rot, game_sum)
-lineups = {'home': [], 'away': []}
-possessions = {'home': {}, 'away': {}}
-shots = {'home': {'2ptm': 0, '3ptm': 0, 'ftm': 0, '2pta': 0, '3pta': 0, 'fta': 0},
-         'away': {'2ptm': 0, '3ptm': 0, 'ftm': 0, '2pta': 0, '3pta': 0, 'fta': 0}}
-stats = {'home': {}, 'away': {}}
-current_period = -1
-old_game_time = 0
-last_shot_team = 'neutral'
-curr_team = 'neutral'
 def handle_game_time(pcstring, period_change, period_is_ot):
     nums = pcstring.split(':')
     timeSec = int(nums[0])*60+int(nums[1])
@@ -63,11 +43,16 @@ def handle_game_time(pcstring, period_change, period_is_ot):
         constant_time = 720
         if period_is_ot:
             constant_time = 300
-        stats['home'][str(lineups['home'])]['min'] += constant_time - timeSec
-        stats['away'][str(lineups['away'])]['min'] += constant_time - timeSec
+
+        if (teams['home'] == team):
+            stats['home'][str(lineups['home'])]['min'] += constant_time - timeSec
+        if (teams['away'] == team):
+            stats['away'][str(lineups['away'])]['min'] += constant_time - timeSec
     else:
-        stats['home'][str(lineups['home'])]['min'] += diff
-        stats['away'][str(lineups['away'])]['min'] += diff
+        if (teams['home'] == team):
+            stats['home'][str(lineups['home'])]['min'] += diff
+        if (teams['away'] == team):
+            stats['away'][str(lineups['away'])]['min'] += diff
     return timeSec
 
 
@@ -104,71 +89,109 @@ def add_shot(made, typea, typem):
     if made:
         stats[curr_team][str(lineups[curr_team])][typem] += 1
 
-for i in range(len(pbp_data['HOMEDESCRIPTION'])):
-    current_period_new = pbp_data.loc[i, 'PERIOD'] - 1
-    play_clock = pbp_data.loc[i, 'PCTIMESTRING']
-    period_changed = current_period_new > current_period
-    period_is_ot = current_period_new >= 5
-    if period_changed:
-        last_shot_team = 'neutral'
-        current_period = current_period_new
-        print('Period Start')
-        lineups['home'] = sorted(starters_by_period[current_period]['home'])
-        lineups['away'] = sorted(starters_by_period[current_period]['away'])
-        curr_team = 'home'
-        add_lineup_to_stats()
-        curr_team = 'away'
-        add_lineup_to_stats()
-        curr_team = 'neutral'
+stats = {'home': {}, 'away': {}}
 
-    old_game_time = handle_game_time(play_clock, period_changed, period_is_ot)
+games = pd.read_json('games_19_20.json')
+games = np.unique(games['GAME_ID'])
+team = 'MIL'
+for game_id_1 in games:
+    game_id = '00'+str(game_id_1)
+    game = './games/playbyplay/'+game_id+'.json'
+    game_sum = './games/summary/'+game_id+'.json'
+    game_rot = './games/rotation/'+game_id+'.json'
 
-    if pbp_data.loc[i, 'HOMEDESCRIPTION'] is not None:
-        x['text'] = pbp_data.loc[i, 'HOMEDESCRIPTION']
-        curr_team = 'home'
-    elif pbp_data.loc[i, 'VISITORDESCRIPTION'] is not None:
-        x['text'] = pbp_data.loc[i, 'VISITORDESCRIPTION']
-        curr_team = 'away'
-    else:
-        x['text'] = ''
+    game_data = pd.read_json(game_sum)
+    home_team = tm.find_team_name_by_id(game_data.loc[0, 'HOME_TEAM_ID'])
+    away_team = tm.find_team_name_by_id(game_data.loc[0, 'VISITOR_TEAM_ID'])
+
+    if(home_team['abbreviation'] !=team and away_team['abbreviation'] != team):
         continue
-    event = tp.process_item(x)
-    print(event)
-    if event['type'] == eventTypes.SUB:
-        playerOutId = pbp_data.loc[i, 'PLAYER1_ID']
-        playerInId = pbp_data.loc[i, 'PLAYER2_ID']
-        lineup_new = [x if x != playerOutId else int(playerInId) for x in lineups[curr_team]]
-        add_sub(lineup_new)
-        lineups[curr_team] = lineup_new
-        add_lineup_to_stats()
-    elif event['type'] == eventTypes.SHOT:
-        last_shot_team = curr_team
-        add_possession()
-        if (event['3pa'] == 1):
-            add_shot(event['shot_made'], '3pta', '3ptm')
+
+    teams = {'home': home_team['abbreviation'], 'away': away_team['abbreviation']}
+
+    pbp_data = pd.read_json(game)
+    x = {}
+    starters_by_period = rotation_tools.get_starters_by_period(game_rot, game_sum)
+    lineups = {'home': [], 'away': []}
+    possessions = {'home': {}, 'away': {}}
+    shots = {'home': {'2ptm': 0, '3ptm': 0, 'ftm': 0, '2pta': 0, '3pta': 0, 'fta': 0},
+             'away': {'2ptm': 0, '3ptm': 0, 'ftm': 0, '2pta': 0, '3pta': 0, 'fta': 0}}
+
+    current_period = -1
+    old_game_time = 0
+    last_shot_team = 'neutral'
+    curr_team = 'neutral'
+
+
+    for i in range(len(pbp_data['HOMEDESCRIPTION'])):
+        current_period_new = pbp_data.loc[i, 'PERIOD'] - 1
+        play_clock = pbp_data.loc[i, 'PCTIMESTRING']
+        period_changed = current_period_new > current_period
+        period_is_ot = current_period_new >= 5
+        if period_changed:
+            last_shot_team = 'neutral'
+            current_period = current_period_new
+            print('Period Start')
+            lineups['home'] = sorted(starters_by_period[current_period]['home'])
+            lineups['away'] = sorted(starters_by_period[current_period]['away'])
+            curr_team = 'home'
+            if (teams[curr_team] == team):
+                add_lineup_to_stats()
+            curr_team = 'away'
+            if (teams[curr_team] == team):
+                add_lineup_to_stats()
+            curr_team = 'neutral'
+
+        old_game_time = handle_game_time(play_clock, period_changed, period_is_ot)
+
+        if pbp_data.loc[i, 'HOMEDESCRIPTION'] is not None:
+            x['text'] = pbp_data.loc[i, 'HOMEDESCRIPTION']
+            curr_team = 'home'
+        elif pbp_data.loc[i, 'VISITORDESCRIPTION'] is not None:
+            x['text'] = pbp_data.loc[i, 'VISITORDESCRIPTION']
+            curr_team = 'away'
         else:
-            add_shot(event['shot_made'], '2pta', '2ptm')
-        if (event['ast_player'] is not None):
-            add_ast(pbp_data.loc[i, 'PLAYER2_ID'])
-    elif event['type'] == eventTypes.FREE_THROW:
-        last_shot_team = curr_team
-        add_shot(event['shot_made'], 'fta', 'ftm')
-        if (event['fta_ovr'] > 1 and event['fta_no'] == 1):
-            if('technical' not in event['shot_type'].lower()):
-                add_possession()
+            x['text'] = ''
+            continue
+        if(teams[curr_team] != team):
+            continue
+        event = tp.process_item(x)
+        if event['type'] == eventTypes.SUB:
+            playerOutId = pbp_data.loc[i, 'PLAYER1_ID']
+            playerInId = pbp_data.loc[i, 'PLAYER2_ID']
+            lineup_new = [x if x != playerOutId else int(playerInId) for x in lineups[curr_team]]
+            add_sub(lineup_new)
+            lineups[curr_team] = lineup_new
+            add_lineup_to_stats()
+        elif event['type'] == eventTypes.SHOT:
+            last_shot_team = curr_team
+            add_possession()
+            if (event['3pa'] == 1):
+                add_shot(event['shot_made'], '3pta', '3ptm')
+            else:
+                add_shot(event['shot_made'], '2pta', '2ptm')
+            if (event['ast_player'] is not None):
+                add_ast(pbp_data.loc[i, 'PLAYER2_ID'])
+        elif event['type'] == eventTypes.FREE_THROW:
+            last_shot_team = curr_team
+            add_shot(event['shot_made'], 'fta', 'ftm')
+            if (event['fta_ovr'] > 1 and event['fta_no'] == 1):
+                if('technical' not in event['shot_type'].lower()):
+                    add_possession()
 
 
-    elif event['type'] == eventTypes.TURNOVER or event['type'] == eventTypes.TEAM_TURNOVER:
-        add_possession()
-        add_turnover()
-    elif event['type'] == eventTypes.FOUL:
-        add_foul(event['foul_type'])
-    elif event['type'] == eventTypes.REBOUND:
-        add_reb()
-        last_shot_team = 'neutral'
-    elif event['type'] == eventTypes.TEAM_REBOUND:
-        add_reb()
-        last_shot_team = 'neutral'
+        elif event['type'] == eventTypes.TURNOVER or event['type'] == eventTypes.TEAM_TURNOVER:
+            add_possession()
+            add_turnover()
+        elif event['type'] == eventTypes.FOUL:
+            add_foul(event['foul_type'])
+        elif event['type'] == eventTypes.REBOUND:
+            add_reb()
+            last_shot_team = 'neutral'
+        elif event['type'] == eventTypes.TEAM_REBOUND:
+            add_reb()
+            last_shot_team = 'neutral'
+
 
 
 print(stats)
@@ -176,7 +199,7 @@ secs = 0
 for key in stats['away'].keys():
     secs+= stats['away'][key]['o_reb']
 print(secs)
-with open('test_game.json', 'w') as fp:
+with open('MIL.json', 'w') as fp:
     json.dump(stats, fp)
 
 
