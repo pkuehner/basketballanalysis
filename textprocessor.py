@@ -3,7 +3,7 @@ from eventTypes import eventTypes
 
 class TextProcessor(object):
     SHOT_RE = re.compile(
-        '(MISS)?\s*([^\']+|O\'Quinn)\s+((\d+)\')?\s*(((3PT|Tip|Alley Oop|Cutting|Dunk|Pullup|Pull-Up|Turnaround|Finger|Roll|Running|Driving|Hook|Putback|Step|Back|Jump|3pt|Layup|Floating|Fadeaway|Reverse|Bank|No) ?)*)\s*([Ss]hot|Layup|Jumper|Dunk|Fadeaway)\s*(\((\d*) PTS\))?\s*(\((.+) (\d+) AST\))?')  # TODO: Track AST,BLK
+        '(MISS)?\s*([A-Za-z \s\-\'\.]+)\s+((\d+)\')?\s*(((3PT|Tip|Alley Oop|Cutting|Dunk|Pullup|Pull-Up|Turnaround|Finger|Roll|Running|Driving|Hook|Putback|Step|Back|Jump|3pt|Layup|Floating|Fadeaway|Reverse|Bank|No) ?)*)\s*([Ss]hot|Layup|Jumper|Dunk|Fadeaway)\s*(\((\d*) PTS\))?\s*(\((.+) (\d+) AST\))?')  # TODO: Track AST,BLK
     REBOUND_RE = re.compile('(.+?) (Rebound|REBOUND)\s*(\(Off:\s*(\d+) Def:\s*(\d+)\))?')
     DEFENSE_RE = re.compile('(.+?) (BLOCK|STEAL) \((\d+) (STL|BLK)\)')
     TIMEOUT_RE = re.compile('([A-Za-z]+) ?Timeout: (Short|Regular|No Timeout|Official)(.*)')
@@ -12,7 +12,7 @@ class TextProcessor(object):
     TEAM_TURNOVER_RE = re.compile(
         '([A-Za-z]+) ?Turnover ?: ((8 Second Violation|5 Sec Inbound|Backcourt|Shot Clock|Offensive Goaltending|3 Second)( Violation)? \(T#(\d+)\)?)')
     FOUL_RE = re.compile(
-        '([A-Za-z0-9 \-\'\.]+?) (AWAY\.FROM\.PLAY|P|S|L|L\.B|OFF|T|Offensive Charge)\.? ?(FOUL|Foul) \((P|T)(\d+).?(.(\d+)\))?.*')
+        '([A-Za-z0-9 \-\'\.]+?) (AWAY\.FROM\.PLAY|P|S|L|L\.B|OFF|T|Offensive Charge|Personal Take|C\.P)\.? ?(FOUL|Foul) \((P|T)(\d+).?(.(\d+)\))?.*')
     JUMP_RE = re.compile('Jump Ball (.+?) vs. (.+):(.*)?')
     VIOLATION_RE = re.compile('(.+?) Violation:(Defensive Goaltending|Kicked Ball|Lane|Jump Ball|Double Lane)( )?')
     FREE_THROW_RE = re.compile('(MISS)?\s*(.+) Free Throw (Flagrant|Clear Path)? ?(\d) of (\d)\s*(\((\d+) PTS\))?')
@@ -33,9 +33,6 @@ class TextProcessor(object):
             l = len(text)
             m = self.SHOT_RE.match(text)
             if m:
-                for i in range(1, 15):
-                    pass
-                    #print(m.group(i))
                 event = {'player': m.group(2), 'dist': m.group(4), 'type': eventTypes.SHOT, 'shot_type': m.group(4), '3pa': 0,
                          'shot_made': 0, 'ast_player': None}
                 if '3PT' in m.group(5):

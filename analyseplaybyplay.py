@@ -43,15 +43,10 @@ def handle_game_time(pcstring, period_change, period_is_ot):
         constant_time = 720
         if period_is_ot:
             constant_time = 300
-
-        if (teams['home'] == team):
             stats['home'][str(lineups['home'])]['min'] += constant_time - timeSec
-        if (teams['away'] == team):
             stats['away'][str(lineups['away'])]['min'] += constant_time - timeSec
     else:
-        if (teams['home'] == team):
             stats['home'][str(lineups['home'])]['min'] += diff
-        if (teams['away'] == team):
             stats['away'][str(lineups['away'])]['min'] += diff
     return timeSec
 
@@ -93,8 +88,8 @@ stats = {'home': {}, 'away': {}}
 
 games = pd.read_json('games_19_20.json')
 games = np.unique(games['GAME_ID'])
-team = 'MIL'
 for game_id_1 in games:
+    stats = {'home': {}, 'away': {}}
     game_id = '00'+str(game_id_1)
     game = './games/playbyplay/'+game_id+'.json'
     game_sum = './games/summary/'+game_id+'.json'
@@ -103,9 +98,6 @@ for game_id_1 in games:
     game_data = pd.read_json(game_sum)
     home_team = tm.find_team_name_by_id(game_data.loc[0, 'HOME_TEAM_ID'])
     away_team = tm.find_team_name_by_id(game_data.loc[0, 'VISITOR_TEAM_ID'])
-
-    if(home_team['abbreviation'] !=team and away_team['abbreviation'] != team):
-        continue
 
     teams = {'home': home_team['abbreviation'], 'away': away_team['abbreviation']}
 
@@ -131,15 +123,12 @@ for game_id_1 in games:
         if period_changed:
             last_shot_team = 'neutral'
             current_period = current_period_new
-            print('Period Start')
             lineups['home'] = sorted(starters_by_period[current_period]['home'])
             lineups['away'] = sorted(starters_by_period[current_period]['away'])
             curr_team = 'home'
-            if (teams[curr_team] == team):
-                add_lineup_to_stats()
+            add_lineup_to_stats()
             curr_team = 'away'
-            if (teams[curr_team] == team):
-                add_lineup_to_stats()
+            add_lineup_to_stats()
             curr_team = 'neutral'
 
         old_game_time = handle_game_time(play_clock, period_changed, period_is_ot)
@@ -152,8 +141,6 @@ for game_id_1 in games:
             curr_team = 'away'
         else:
             x['text'] = ''
-            continue
-        if(teams[curr_team] != team):
             continue
         event = tp.process_item(x)
         if event['type'] == eventTypes.SUB:
@@ -193,14 +180,8 @@ for game_id_1 in games:
             last_shot_team = 'neutral'
 
 
-
-print(stats)
-secs = 0
-for key in stats['away'].keys():
-    secs+= stats['away'][key]['o_reb']
-print(secs)
-with open('MIL.json', 'w') as fp:
-    json.dump(stats, fp)
+    with open('./games/processed/'+game_id+'.json', 'w') as fp:
+        json.dump({'teams': teams, 'stats': stats}, fp)
 
 
 
